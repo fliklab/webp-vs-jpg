@@ -38,6 +38,17 @@ const createExperiment = async () => {
   }
 
   try {
+    const queuePath = path.join(
+      process.cwd(),
+      "queue",
+      `${experimentNameArg}.json`
+    );
+    if (!(await fs.pathExists(queuePath))) {
+      console.error(`오류: 큐 파일을 찾을 수 없습니다: ${queuePath}`);
+      process.exit(1);
+    }
+    const jobConfig = await fs.readJson(queuePath);
+
     const nextNumber = await getNextExperimentNumber();
     const formattedName = formatExperimentName(experimentNameArg);
     const experimentDirName = `${nextNumber}-${formattedName}`;
@@ -60,19 +71,27 @@ const createExperiment = async () => {
     const reportPath = path.join(experimentPath, "report.md");
     await fs.copy(templatePath, reportPath);
 
-    // 3. report.md의 내용 수정
+    // 3. job.json을 실험 폴더로 복사
+    await fs.copy(
+      queuePath,
+      path.join(experimentPath, `${formattedName}.json`)
+    );
+
+    // 4. report.md의 내용 수정
     let reportContent = await fs.readFile(reportPath, "utf-8");
-    const title = experimentNameArg
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+    const title =
+      jobConfig.experimentName ||
+      experimentNameArg
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
     reportContent = reportContent.replace(
       /{{EXPERIMENT_NAME}}/g,
       `${nextNumber}. ${title}`
     );
     reportContent = reportContent.replace(
       /{{BRIEF_DESCRIPTION}}/g,
-      `About ${title}`
+      jobConfig.briefDescription || `About ${title}`
     );
 
     await fs.writeFile(reportPath, reportContent);

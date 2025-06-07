@@ -4,11 +4,13 @@ import fs from "fs-extra";
 import path from "path";
 import sharp from "sharp";
 import { convertImage, ConversionTask } from "./convert.js";
+import { resolveSourceFiles } from "./utils.js";
 
 // 설정 파일의 타입을 정의
 interface BatchConfig {
   description: string;
-  source: string | string[];
+  source?: string | string[];
+  testCasesPath?: string;
   tasks?: ConversionTask[];
   task_groups?: {
     condition: {
@@ -22,28 +24,12 @@ interface BatchConfig {
   }[];
 }
 
-// 소스 경로를 해석하여 파일 목록을 반환하는 함수
-const resolveSourceFiles = async (
-  source: string | string[]
-): Promise<string[]> => {
-  const imageExtensions = [".jpg", ".jpeg", ".png", ".webp", ".avif"];
-  if (Array.isArray(source)) {
-    return source;
-  }
-  if ((await fs.pathExists(source)) && (await fs.stat(source)).isDirectory()) {
-    const allFiles = await fs.readdir(source);
-    return allFiles
-      .filter((file) =>
-        imageExtensions.includes(path.extname(file).toLowerCase())
-      )
-      .map((file) => path.join(source, file));
-  }
-  return [source];
-};
-
 const processBatch = async (configPath: string, outputDir: string) => {
   const config: BatchConfig = await fs.readJson(configPath);
-  const sourceFiles = await resolveSourceFiles(config.source);
+  const sourceFiles = await resolveSourceFiles(
+    config.source,
+    config.testCasesPath
+  );
   const imageOutputDir = path.join(outputDir, "image");
   await fs.ensureDir(imageOutputDir);
 
