@@ -1,4 +1,3 @@
-import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
 import sharp from "sharp";
 import path from "path";
@@ -74,6 +73,7 @@ const convertImage = async (
 
 // 메인 함수
 const main = async () => {
+  const yargs = (await import("yargs/yargs")).default;
   const argv = await yargs(hideBin(process.argv))
     .option("source", {
       alias: "s",

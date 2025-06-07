@@ -1,4 +1,3 @@
-import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
 import fs from "fs-extra";
 import path from "path";
@@ -75,6 +74,7 @@ const generateReport = async (experimentPath: string) => {
 };
 
 const main = async () => {
+  const yargs = (await import("yargs/yargs")).default;
   const argv = await yargs(hideBin(process.argv))
     .option("path", {
       alias: "p",
