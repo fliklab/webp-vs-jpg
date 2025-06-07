@@ -1,0 +1,116 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+## 전체 지시 프롬프트
+
+### 🎯 목적 정의 프롬프트
+
+```
+당신은 이미지 포맷 변환 실험 프로젝트의 관리 역할을 맡은 AI입니다.
+
+이 프로젝트는 WebP, JPG, PNG 등 다양한 이미지 포맷의 압축 효율을 실험하고 결과를 Markdown 형식으로 기록하는 것을 목표로 합니다. 각각의 실험은 별도의 폴더로 관리되며, 실험 대상 이미지와 변환 결과, 리포트가 포함됩니다.
+
+당신의 역할은 다음과 같습니다:
+
+1. 레포지토리 구조를 정의하고, 초기 디렉터리와 템플릿을 생성합니다.
+2. 실험 실행을 자동화할 수 있는 CLI 스크립트를 생성합니다.
+3. 결과를 Markdown으로 자동 정리하는 도구를 만듭니다.
+4. 전체 실험을 관리할 수 있는 README 및 index를 유지합니다.
+5. 실험 데이터를 기반으로 분석 및 시각화 코드도 구성할 수 있습니다.
+```
+
+---
+
+## 🧱 1단계: 초기 세팅 지시
+
+```
+- `image-format-experiments`라는 레포지토리를 위한 디렉터리 구조를 생성해줘
+- 다음 구조를 포함해야 해:
+
+```
+
+image-format-experiments/
+├─ README.md
+├─ template.md
+├─ scripts/
+│  ├─ init-experiment.ts
+│  ├─ convert.ts
+│  └─ generate-report.ts
+├─ tools/
+├─ 01-white-image-test/
+│  ├─ image/
+│  └─ report.md
+
+```
+
+- `README.md`에는 프로젝트 소개, 사용법, 실험 리스트 테이블을 포함시켜
+- `template.md`는 실험 리포트를 위한 마크다운 템플릿을 포함해야 해
+```
+
+---
+
+## 🧰 2단계: 실험 초기화 스크립트 만들기
+
+```
+`scripts/init-experiment.ts` 파일을 만들어줘.
+
+기능:
+- `npm run init-experiment -- "text-rendering-test"` 와 같이 실행하면
+- 번호 자동 증가
+- `NN-실험이름` 폴더 생성
+- 내부에 `/image`, `report.md` 템플릿 자동 복사
+```
+
+---
+
+## 🔁 3단계: 이미지 변환 스크립트 작성 요청
+
+```
+ImageMagick 또는 Sharp를 사용해서
+- 주어진 이미지 파일을 JPG ↔ WebP로 변환하는 `scripts/convert.ts` 를 만들어줘
+- 퀄리티 파라미터도 CLI 옵션으로 받게 해줘
+- 변환 후 파일명은 규칙에 따라 저장해줘 (예: `original.webp → converted_to_jpg.jpg`)
+```
+
+---
+
+## 📊 4단계: 리포트 자동 생성 스크립트 요청
+
+```
+`generate-report.ts` 스크립트를 작성해줘
+
+역할:
+- 해당 실험 폴더 내 image 디렉토리의 파일 정보를 읽어옴
+- 파일명, 포맷, 용량(KB)을 테이블로 정리
+- `report.md` 파일의 템플릿에 결과 삽입
+
+옵션:
+- 용량 차이, 비율, 분석 요약도 포함 가능
+```
+
+---
+
+## 📃 5단계: 실험 리스트 자동 업데이트
+
+```
+최상위 `README.md`를 자동 업데이트하는 기능을 추가해줘
+
+- `scripts/update-readme.ts` 작성
+- `/NN-xxx/` 폴더 내부에 있는 `report.md`를 탐색해서 실험 리스트 표를 갱신
+```
+
+---
+
+## 📌 보너스: 시각화 요청 프롬프트
+
+```
+`result.json` 파일 기반으로
+
+- 포맷별 용량 비교를 Chart.js나 Mermaid로 시각화해줘
+- 결과 이미지를 `report.md`에 포함시켜줘
+```
+
+---
