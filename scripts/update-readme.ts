@@ -21,23 +21,24 @@ const getExperimentTitle = async (reportPath: string): Promise<string> => {
 const updateReadme = async () => {
   try {
     const rootDir = process.cwd();
-    const files = await fs.readdir(rootDir);
+    const experimentsPath = path.join(rootDir, "experiments");
+    const files = await fs.readdir(experimentsPath);
     const experimentDirs = files.filter(
       (file) =>
         /^\d+-/.test(file) &&
-        fs.statSync(path.join(rootDir, file)).isDirectory()
+        fs.statSync(path.join(experimentsPath, file)).isDirectory()
     );
 
     const experiments: Experiment[] = [];
     for (const dirName of experimentDirs) {
-      const reportPath = path.join(rootDir, dirName, "report.md");
+      const reportPath = path.join(experimentsPath, dirName, "report.md");
       const title = await getExperimentTitle(reportPath);
       const number = dirName.split("-")[0];
 
       experiments.push({
         number,
         name: title.substring(title.indexOf(" ") + 1), // "01. White Image Test" -> "White Image Test"
-        reportPath: `./${dirName}/report.md`,
+        reportPath: `./experiments/${dirName}/report.md`,
         dirName,
       });
     }

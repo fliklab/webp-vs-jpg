@@ -1,22 +1,25 @@
-name: PR Image Experiment Automation
+name: JSON Config-based Experiment Automation
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  push:
     branches:
       - main
+    paths:
+      - "queue/**.json"
+  workflow_dispatch: # 워크플로우 수동 실행을 위한 트리거
 
 jobs:
   automate-experiment:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }} # Checkout the PR branch
+          # main 브랜치의 전체 기록을 가져와야 마지막 실험 번호를 찾을 수 있음
+          fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "18"
           cache: "npm"
@@ -24,71 +27,84 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Get PR Title & Body
-        id: pr_info
+      - name: Find JSON files to process
+        id: find_json
         run: |
-          echo "title=$(echo '${{ github.event.pull_request.title }}' | sed -n 's/feat: *//p')" >> "$GITHUB_OUTPUT"
-          echo 'body<<EOF' >> "$GITHUB_OUTPUT"
-          echo '${{ github.event.pull_request.body }}' >> "$GITHUB_OUTPUT"
-          echo 'EOF' >> "$GITHUB_OUTPUT"
-
-      - name: Parse Experiment Config from PR Body
-        id: config
-        run: |
-          CONFIG_JSON=$(ts-node tools/parse-pr-body.ts "${{ steps.pr_info.outputs.body }}")
-          echo "json=$CONFIG_JSON" >> $GITHUB_OUTPUT
-
-      - name: Run Experiment Automation
-        id: experiment
-        env:
-          PR_TITLE: ${{ steps.pr_info.outputs.title }}
-          CONFIG_JSON: ${{ steps.config.outputs.json }}
-        run: |
-          if [ -z "$PR_TITLE" ]; then
-            echo "PR title does not follow 'feat: [Experiment Name]' format."
-            exit 1
+          JSON_FILES=""
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "Push event detected. Finding new JSON files."
+            JSON_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.before }} ${{ github.event.after }} -- 'queue/*.json')
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "Manual dispatch detected. Finding all JSON files in queue."
+            JSON_FILES=$(find queue -maxdepth 1 -type f -name "*.json" 2>/dev/null || true)
           fi
 
-          # 1. Init Experiment
-          npm run init-experiment -- "$PR_TITLE"
+          if [ -z "$JSON_FILES" ]; then
+            echo "No JSON files to process."
+            echo "has_files=false" >> $GITHUB_OUTPUT
+          else
+            echo "Files to be processed:"
+            echo "$JSON_FILES"
+            echo "has_files=true" >> $GITHUB_OUTPUT
+            echo "json_paths<<EOF" >> $GITHUB_OUTPUT
+            echo "$JSON_FILES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
 
-          # 2. Get new experiment directory path
-          EXPERIMENT_SLUG=$(echo "$PR_TITLE" | iconv -t ascii//TRANSLIT | sed -r 's/[~\^]+//g' | sed -r 's/[^a-zA-Z0-9]+/-/g' | sed -r 's/^-+|-+$//g' | tr A-Z a-z)
-          LATEST_NUM=$(ls -d [0-9][0-9]-*/ | tail -n 1 | cut -d'-' -f1)
-          EXPERIMENT_DIR_PATH="${LATEST_NUM}-${EXPERIMENT_SLUG}"
-
-          # 3. Copy source image
-          SOURCE_PATH=$(echo "$CONFIG_JSON" | jq -r .source)
-          IMAGE_FILENAME=$(basename "$SOURCE_PATH")
-          mkdir -p "$EXPERIMENT_DIR_PATH/image"
-          cp "$SOURCE_PATH" "$EXPERIMENT_DIR_PATH/image/$IMAGE_FILENAME"
-
-          NEW_IMAGE_PATH="$EXPERIMENT_DIR_PATH/image/$IMAGE_FILENAME"
-
-          # 4. Convert images based on config
-          echo "$CONFIG_JSON" | jq -c '.conversions[]' | while read -r conversion; do
-            FORMAT=$(echo "$conversion" | jq -r .format)
-            QUALITY=$(echo "$conversion" | jq -r .quality)
-            
-            CONVERT_ARGS="--path \"$NEW_IMAGE_PATH\" --format \"$FORMAT\""
-            if [ "$QUALITY" != "null" ]; then
-              CONVERT_ARGS="$CONVERT_ARGS --quality \"$QUALITY\""
+      - name: Process All Experiments
+        if: steps.find_json.outputs.has_files == 'true'
+        id: experiment
+        env:
+          JSON_PATHS: ${{ steps.find_json.outputs.json_paths }}
+        run: |
+          echo "$JSON_PATHS" | while IFS= read -r JSON_PATH; do
+            if [ -z "$JSON_PATH" ]; then
+              continue
             fi
             
-            npm run convert -- $CONVERT_ARGS
+            echo "--- Processing: ${JSON_PATH} ---"
+            CONFIG_JSON=$(cat "$JSON_PATH")
+            EXPERIMENT_NAME=$(basename "$JSON_PATH" .json)
+
+            # 1. Init Experiment
+            npm run init-experiment -- "$EXPERIMENT_NAME"
+            
+            # 2. Get the path of the directory just created
+            EXPERIMENT_DIR_PATH=$(ls -td experiments/*/ | head -n 1 | sed 's:/*$::')
+
+            # 3. Copy source image
+            SOURCE_PATH=$(echo "$CONFIG_JSON" | jq -r .source)
+            IMAGE_FILENAME=$(basename "$SOURCE_PATH")
+            mkdir -p "$EXPERIMENT_DIR_PATH/image"
+            cp "$SOURCE_PATH" "$EXPERIMENT_DIR_PATH/image/$IMAGE_FILENAME"
+            
+            NEW_IMAGE_PATH="$EXPERIMENT_DIR_PATH/image/$IMAGE_FILENAME"
+            
+            # 4. Convert images based on config
+            echo "$CONFIG_JSON" | jq -c '.conversions[]' | while read -r conversion; do
+              FORMAT=$(echo "$conversion" | jq -r .format)
+              QUALITY=$(echo "$conversion" | jq -r .quality)
+              
+              CONVERT_ARGS="--path \"$NEW_IMAGE_PATH\" --format \"$FORMAT\""
+              if [ "$QUALITY" != "null" ]; then
+                CONVERT_ARGS="$CONVERT_ARGS --quality $QUALITY"
+              fi
+              
+              npx ts-node scripts/convert.ts $CONVERT_ARGS
+            done
+            
+            # 5. Generate report
+            npm run generate-report -- --path "$EXPERIMENT_DIR_PATH"
+            
+            # 6. Move processed json file to the result directory
+            mv "$JSON_PATH" "$EXPERIMENT_DIR_PATH/"
+            echo "Finished processing ${JSON_PATH}. Moved to ${EXPERIMENT_DIR_PATH}/"
           done
 
-          # 5. Generate report
-          npm run generate-report -- --path "$EXPERIMENT_DIR_PATH"
-
-          echo "dir_path=${EXPERIMENT_DIR_PATH}" >> $GITHUB_OUTPUT
-
-      - name: Update README and Commit Changes
+      - name: Commit and Push Changes
+        if: steps.find_json.outputs.has_files == 'true'
         run: |
-          # 6. Update README
+          # 7. Update README with all new experiments
           npm run update-readme
 
           git config --global user.name 'github-actions[bot]'
@@ -96,10 +112,9 @@ jobs:
 
           git add .
 
-          # Check if there are changes to commit
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "chore: auto-generate experiment results for '${{ steps.pr_info.outputs.title }}'"
+            git commit -m "feat: auto-generate new experiment results"
             git push
           fi

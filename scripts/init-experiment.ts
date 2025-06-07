@@ -1,12 +1,16 @@
 import fs from "fs-extra";
 import path from "path";
 
+const EXPERIMENTS_DIR = "experiments";
+
 const getNextExperimentNumber = async (): Promise<string> => {
-  const rootDir = process.cwd();
-  const files = await fs.readdir(rootDir);
+  const experimentsPath = path.join(process.cwd(), EXPERIMENTS_DIR);
+  await fs.ensureDir(experimentsPath); // experiments 폴더가 없으면 생성
+  const files = await fs.readdir(experimentsPath);
   const experimentDirs = files.filter(
     (file) =>
-      /^\d+-/.test(file) && fs.statSync(path.join(rootDir, file)).isDirectory()
+      /^\d+-/.test(file) &&
+      fs.statSync(path.join(experimentsPath, file)).isDirectory()
   );
 
   if (experimentDirs.length === 0) {
@@ -37,7 +41,11 @@ const createExperiment = async () => {
     const nextNumber = await getNextExperimentNumber();
     const formattedName = formatExperimentName(experimentNameArg);
     const experimentDirName = `${nextNumber}-${formattedName}`;
-    const experimentPath = path.join(process.cwd(), experimentDirName);
+    const experimentPath = path.join(
+      process.cwd(),
+      EXPERIMENTS_DIR,
+      experimentDirName
+    );
 
     if (await fs.pathExists(experimentPath)) {
       console.error(`오류: 폴더 '${experimentDirName}'가 이미 존재합니다.`);

@@ -31,16 +31,15 @@ function parsePrBody(body: string): Config {
   return config;
 }
 
-const prBody = process.argv[2];
-if (!prBody) {
-  console.error('Usage: ts-node parse-pr-body.ts "<PR_BODY>"');
-  process.exit(1);
-}
-
-try {
-  const config = parsePrBody(prBody);
-  console.log(JSON.stringify(config));
-} catch (error) {
-  console.error((error as Error).message);
-  process.exit(1);
-}
+const chunks: Buffer[] = [];
+process.stdin.on("data", (chunk) => chunks.push(chunk));
+process.stdin.on("end", () => {
+  const prBody = Buffer.concat(chunks).toString("utf8");
+  try {
+    const config = parsePrBody(prBody);
+    console.log(JSON.stringify(config));
+  } catch (error) {
+    console.error((error as Error).message);
+    process.exit(1);
+  }
+});
