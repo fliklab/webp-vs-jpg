@@ -1,0 +1,22 @@
+{
+  "description": "리사이즈와 다양한 포맷 옵션을 포함한 고급 테스트",
+  "source": "sources/ss0607.png",
+  "tasks": [
+    {
+      "output_suffix": "webp_q85_resized",
+      "format": "webp",
+      "options": { "quality": 85 },
+      "resize": { "width": 800 }
+    },
+    {
+      "output_suffix": "jpeg_q90",
+      "format": "jpeg",
+      "options": { "quality": 90 }
+    },
+    {
+      "output_suffix": "avif_lossless",
+      "format": "avif",
+      "options": { "lossless": true }
+    }
+  ]
+}
