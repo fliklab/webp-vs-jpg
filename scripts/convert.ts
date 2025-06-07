@@ -30,10 +30,15 @@ export interface AvifOptions {
 }
 
 export interface ConversionTask {
+  format: "jpeg" | "png" | "webp" | "avif";
   output_suffix: string;
-  format: "webp" | "jpeg" | "png" | "avif";
-  resize?: ResizeOptions;
-  options?: WebpOptions | JpegOptions | PngOptions | AvifOptions;
+  resize?: sharp.ResizeOptions;
+  options?:
+    | sharp.WebpOptions
+    | sharp.JpegOptions
+    | sharp.PngOptions
+    | sharp.AvifOptions;
+  source_task_suffix?: string;
 }
 
 export const convertImage = async (
@@ -55,16 +60,16 @@ export const convertImage = async (
   // 포맷별 변환 옵션 적용
   switch (task.format) {
     case "webp":
-      image = image.webp(task.options as WebpOptions);
+      image = image.webp(task.options as sharp.WebpOptions);
       break;
     case "jpeg":
-      image = image.jpeg(task.options as JpegOptions);
+      image = image.jpeg(task.options as sharp.JpegOptions);
       break;
     case "png":
-      image = image.png(task.options as PngOptions);
+      image = image.png(task.options as sharp.PngOptions);
       break;
     case "avif":
-      image = image.avif(task.options as AvifOptions);
+      image = image.avif(task.options as sharp.AvifOptions);
       break;
   }
 

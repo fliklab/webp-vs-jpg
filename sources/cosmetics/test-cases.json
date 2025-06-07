@@ -1,0 +1,14 @@
+[
+  {
+    "name": "cosmetic_256",
+    "path": "sources/cosmetics/256/a_256.png"
+  },
+  {
+    "name": "cosmetic_512",
+    "path": "sources/cosmetics/512/a_512.png"
+  },
+  {
+    "name": "cosmetic_1024",
+    "path": "sources/cosmetics/1024/a_1024.png"
+  }
+]

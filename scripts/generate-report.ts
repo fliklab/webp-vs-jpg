@@ -4,8 +4,13 @@ import fs from "fs-extra";
 import path from "path";
 import sharp from "sharp";
 import { resolveSourceFiles } from "./utils.js";
+import { ConversionTask } from "./convert.js";
 
 const bytesToKB = (bytes: number): string => (bytes / 1024).toFixed(2);
+
+const findTaskBySuffix = (tasks: ConversionTask[], suffix: string) => {
+  return tasks.find((t) => t.output_suffix === suffix);
+};
 
 const generateReport = async (experimentPath: string) => {
   const imageDir = path.join(experimentPath, "image");
@@ -67,60 +72,58 @@ const generateReport = async (experimentPath: string) => {
       const sourceImageStats = await fs.stat(sourceImageCopyPath);
       const sourceMetadata = await sharp(sourceImageCopyPath).metadata();
 
-      let tasksToRun: any[] = [];
-      if (config.tasks) {
-        tasksToRun = config.tasks;
-      } else if (config.task_groups) {
-        // (task_groups 로직은 현재 작업에 불필요하므로 간소화)
-      }
-
-      if (tasksToRun.length === 0) continue;
-
-      resultsMarkdown += `### ${sourceFileName}\n\n`;
-      resultsMarkdown += `| 속성 | 원본 (${sourceMetadata.format}) |\n`;
-      resultsMarkdown += `|:---|:---|\n`;
-      const sourcePreview = `<a href="./image/${sourceFileName}"><img src="./image/${sourceFileName}" width="128"></a>`;
-      resultsMarkdown += `| 미리보기 | ${sourcePreview} |\n`;
-      resultsMarkdown += `| 해상도 | ${sourceMetadata.width}x${sourceMetadata.height} |\n`;
-      resultsMarkdown += `| 용량 | ${bytesToKB(
+      resultsMarkdown += `### ${sourceFileName} (Original: ${bytesToKB(
         sourceImageStats.size
-      )} KB |\n\n`;
+      )} KB)\n\n`;
+      resultsMarkdown += `| Conversion Path | Format & Quality | Size | Change | Preview |\n`;
+      resultsMarkdown += `|:---|:---|:---|:---|:---|\n`;
 
-      resultsMarkdown += `**변환 결과**\n\n`;
-      resultsMarkdown += `| 포맷 (옵션) | 해상도 | 용량 (원본 대비) | 미리보기 |\n`;
-      resultsMarkdown += `|:---|:---|:---|:---|\n`;
-
-      for (const task of tasksToRun) {
+      const tasks = config.tasks as ConversionTask[];
+      for (const task of tasks) {
         const outputFilename = `${path.basename(
           sourceFileName,
           path.extname(sourceFileName)
         )}-${task.output_suffix}.${task.format}`;
         const outputPath = path.join(imageDir, outputFilename);
+        if (!(await fs.pathExists(outputPath))) continue;
 
-        if (await fs.pathExists(outputPath)) {
-          const stats = await fs.stat(outputPath);
-          const sizeKB = bytesToKB(stats.size);
-          const sizeChange = (
-            ((stats.size - sourceImageStats.size) / sourceImageStats.size) *
-            100
-          ).toFixed(2);
+        const stats = await fs.stat(outputPath);
+        const sizeKB = bytesToKB(stats.size);
 
-          const outputMetadata = await sharp(outputPath).metadata();
+        let pathStr = `**Direct**<br>PNG -> ${task.format.toUpperCase()}`;
+        let sizeChangeStr = `${(
+          ((stats.size - sourceImageStats.size) / sourceImageStats.size) *
+          100
+        ).toFixed(2)}%`;
 
-          const optionsStr = task.options
-            ? ` (${Object.entries(task.options)
-                .map(([k, v]) => `${k}: ${v}`)
-                .join(", ")})`
-            : "";
-          const formatWithOptions = `${task.format}${optionsStr}`;
-          const resolutionStr = `${outputMetadata.width}x${outputMetadata.height}`;
-          const capacityStr = `${sizeKB} KB (${
-            +sizeChange > 0 ? "+" : ""
-          }${sizeChange}%)`;
-          const outputPreview = `<a href="./image/${outputFilename}"><img src="./image/${outputFilename}" width="128"></a>`;
-
-          resultsMarkdown += `| ${formatWithOptions} | ${resolutionStr} | ${capacityStr} | ${outputPreview} |\n`;
+        if (task.source_task_suffix) {
+          const sourceTask = findTaskBySuffix(tasks, task.source_task_suffix);
+          if (sourceTask) {
+            const sourceTaskFilename = `${path.basename(
+              sourceFileName,
+              path.extname(sourceFileName)
+            )}-${sourceTask.output_suffix}.${sourceTask.format}`;
+            const sourceTaskPath = path.join(imageDir, sourceTaskFilename);
+            if (await fs.pathExists(sourceTaskPath)) {
+              const sourceTaskStats = await fs.stat(sourceTaskPath);
+              pathStr = `**Chained**<br>...${sourceTask.format.toUpperCase()} -> ${task.format.toUpperCase()}`;
+              sizeChangeStr = `${(
+                ((stats.size - sourceTaskStats.size) / sourceTaskStats.size) *
+                100
+              ).toFixed(2)}% vs previous`;
+              sizeChangeStr += `<br>${(
+                ((stats.size - sourceImageStats.size) / sourceImageStats.size) *
+                100
+              ).toFixed(2)}% vs original`;
+            }
+          }
         }
+
+        const optionsStr = task.options ? `(q: ${task.options.quality})` : "";
+        const formatWithOptions = `${task.format.toUpperCase()} ${optionsStr}`;
+        const preview = `<a href="./image/${outputFilename}"><img src="./image/${outputFilename}" width="128"></a>`;
+
+        resultsMarkdown += `| ${pathStr} | ${formatWithOptions} | ${sizeKB} KB | ${sizeChangeStr} | ${preview} |\n`;
       }
       resultsMarkdown += `\n---\n\n`;
     }

@@ -84,8 +84,53 @@ const processBatch = async (configPath: string, outputDir: string) => {
     }
 
     console.log(`Found ${tasksToRun.length} tasks for ${sourceFileName}`);
-    for (const task of tasksToRun) {
+
+    // source_task_suffix가 없는 task (1차 변환) 부터 실행
+    const primaryTasks = tasksToRun.filter((task) => !task.source_task_suffix);
+    const chainedTasks = tasksToRun.filter((task) => task.source_task_suffix);
+
+    for (const task of primaryTasks) {
       await convertImage(destinationPath, task, imageOutputDir);
+    }
+
+    // 1차 변환 결과물을 입력으로 2차 변환 실행
+    for (const task of chainedTasks) {
+      const sourceTaskOutputFilename = `${path.basename(
+        sourceFileName,
+        path.extname(sourceFileName)
+      )}-${task.source_task_suffix}.${
+        (await sharp(destinationPath).metadata()).format === "jpeg"
+          ? "jpg"
+          : (await sharp(destinationPath).metadata()).format
+      }`;
+      // Note: This is a simplification. A robust implementation would need to know the *exact* format of the intermediate file.
+      // Let's find the actual file extension of the source task's output.
+      const potentialSourceExtensions = ["webp", "jpg", "jpeg", "png", "avif"];
+      let inputForChainedTask = "";
+
+      for (const ext of potentialSourceExtensions) {
+        const intermediateFileName = `${path.basename(
+          sourceFileName,
+          path.extname(sourceFileName)
+        )}-${task.source_task_suffix}.${ext}`;
+        const intermediatePath = path.join(
+          imageOutputDir,
+          intermediateFileName
+        );
+        if (await fs.pathExists(intermediatePath)) {
+          inputForChainedTask = intermediatePath;
+          break;
+        }
+      }
+
+      if (!inputForChainedTask) {
+        console.warn(
+          `[!] Chained task skipped: Input file for suffix '${task.source_task_suffix}' not found.`
+        );
+        continue;
+      }
+
+      await convertImage(inputForChainedTask, task, imageOutputDir);
     }
   }
   console.log("✅ Batch processing complete.");
