@@ -65,7 +65,6 @@ jobs:
             fi
             
             echo "--- Processing: ${JSON_PATH} ---"
-            CONFIG_JSON=$(cat "$JSON_PATH")
             EXPERIMENT_NAME=$(basename "$JSON_PATH" .json)
 
             # 1. Init Experiment
@@ -74,24 +73,14 @@ jobs:
             # 2. Get the path of the directory just created
             EXPERIMENT_DIR_PATH=$(ls -td experiments/*/ | head -n 1 | sed 's:/*$::')
 
-            # 3. Copy source image
-            SOURCE_PATH=$(echo "$CONFIG_JSON" | jq -r .source)
-            IMAGE_FILENAME=$(basename "$SOURCE_PATH")
-            mkdir -p "$EXPERIMENT_DIR_PATH/image"
-            cp "$SOURCE_PATH" "$EXPERIMENT_DIR_PATH/image/$IMAGE_FILENAME"
+            # 3. Process the batch of images as defined in the JSON file
+            npm run process-batch -- --config "$JSON_PATH" --outputDir "$EXPERIMENT_DIR_PATH"
             
-            NEW_IMAGE_PATH="$EXPERIMENT_DIR_PATH/image/$IMAGE_FILENAME"
-            
-            # 4. Convert images based on config
-            echo "$CONFIG_JSON" | jq -c '.tasks[]' | while read -r task; do
-              npm run convert -- --source "$NEW_IMAGE_PATH" --task "$task" --outputDir "$EXPERIMENT_DIR_PATH/image"
-            done
-            
-            # 5. Move processed json file to the result directory FIRST
+            # 4. Move processed json file to the result directory
             mv "$JSON_PATH" "$EXPERIMENT_DIR_PATH/"
             echo "Finished processing ${JSON_PATH}. Moved to ${EXPERIMENT_DIR_PATH}/"
 
-            # 6. Generate report AFTER moving the json
+            # 5. Generate report
             npm run generate-report -- --path "$EXPERIMENT_DIR_PATH"
           done
 

@@ -1,0 +1,30 @@
+{
+  "description": "Batch convert text-render folder: JPG to WebP and WebP to JPG",
+  "source": "sources/text-render",
+  "task_groups": [
+    {
+      "condition": {
+        "source_format": "jpeg"
+      },
+      "tasks": [
+        {
+          "output_suffix": "to_webp_q80",
+          "format": "webp",
+          "options": { "quality": 80 }
+        }
+      ]
+    },
+    {
+      "condition": {
+        "source_format": "webp"
+      },
+      "tasks": [
+        {
+          "output_suffix": "to_jpg_q85",
+          "format": "jpeg",
+          "options": { "quality": 85 }
+        }
+      ]
+    }
+  ]
+}

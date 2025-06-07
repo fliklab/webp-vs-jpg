@@ -7,6 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "init-experiment": "node --loader ts-node/esm scripts/init-experiment.ts",
+    "process-batch": "node --loader ts-node/esm scripts/process-batch.ts",
     "convert": "node --loader ts-node/esm scripts/convert.ts",
     "generate-report": "node --loader ts-node/esm scripts/generate-report.ts",
     "update-readme": "node --loader ts-node/esm scripts/update-readme.ts"

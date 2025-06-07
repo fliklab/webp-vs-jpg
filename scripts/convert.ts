@@ -5,38 +5,37 @@ import path from "path";
 import fs from "fs-extra";
 
 // Sharp의 옵션 인터페이스들을 확장성 있게 정의
-interface ResizeOptions {
+export interface ResizeOptions {
   width?: number;
   height?: number;
 }
 
-interface WebpOptions {
+export interface WebpOptions {
   quality?: number;
   lossless?: boolean;
 }
 
-interface JpegOptions {
+export interface JpegOptions {
   quality?: number;
 }
 
-interface PngOptions {
+export interface PngOptions {
   quality?: number;
 }
 
-interface AvifOptions {
+export interface AvifOptions {
   quality?: number;
   speed?: number; // 0(느림, 고품질) ~ 8(빠름, 저품질)
 }
 
-// 변환 작업에 대한 인터페이스
-interface ConversionTask {
+export interface ConversionTask {
   output_suffix: string;
   format: "webp" | "jpeg" | "png" | "avif";
-  options: WebpOptions | JpegOptions | PngOptions | AvifOptions;
   resize?: ResizeOptions;
+  options?: WebpOptions | JpegOptions | PngOptions | AvifOptions;
 }
 
-const convertImage = async (
+export const convertImage = async (
   sourcePath: string,
   task: ConversionTask,
   outputDir: string
@@ -72,13 +71,12 @@ const convertImage = async (
   console.log(`✅ Converted ${sourcePath} to ${outputPath}`);
 };
 
-// 메인 함수
 const main = async () => {
   const argv = await yargs(hideBin(process.argv))
     .option("source", {
       alias: "s",
       type: "string",
-      description: "원본 이미지 파일 경로",
+      description: "변환할 원본 이미지 경로",
       demandOption: true,
     })
     .option("task", {
@@ -90,28 +88,19 @@ const main = async () => {
     .option("outputDir", {
       alias: "o",
       type: "string",
-      description: "결과물이 저장될 디렉토리",
+      description: "결과물을 저장할 디렉토리",
       demandOption: true,
     })
     .parseAsync();
 
-  let task: ConversionTask;
-  try {
-    task = JSON.parse(argv.task);
-  } catch (error) {
-    console.error(
-      `❌ JSON 파싱 실패: task가 유효한 JSON 형식이 아닙니다. 받은 값: ${argv.task}`
-    );
-    process.exit(1);
-  }
-
-  try {
-    await fs.ensureDir(argv.outputDir);
-    await convertImage(argv.source, task, argv.outputDir);
-  } catch (error) {
-    console.error("❌ Image conversion failed:", error);
-    process.exit(1);
-  }
+  const task: ConversionTask = JSON.parse(argv.task);
+  await convertImage(argv.source, task, argv.outputDir);
 };
 
-main();
+// 이 파일이 직접 실행될 때만 main 함수를 호출
+if (require.main === module) {
+  main().catch((err) => {
+    console.error("❌ 이미지 변환 중 오류 발생:", err);
+    process.exit(1);
+  });
+}
