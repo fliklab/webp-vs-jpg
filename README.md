@@ -41,10 +41,11 @@
 ## 🧪 실험 목록
 
 <!-- EXPERIMENT_LIST_START -->
-
-| 번호 | 실험 이름           | 리포트                                     |
-| :--- | :------------------ | :----------------------------------------- |
-| 01   | White Image Test    | [Link](./01-white-image-test/report.md)    |
-| 02   | Text Rendering Test | [Link](./02-text-rendering-test/report.md) |
+| 번호 | 실험 이름 | 리포트 |
+| :--- | :-------- | :----- |
+| 01 | White Image Test | [Link](./experiments/01-white-image-test/report.md) |
+| 02 | Text Rendering Test | [Link](./experiments/02-text-rendering-test/report.md) |
+| 03 | Test | [Link](./experiments/03-test/report.md) |
+| 04 | Final Workflow Test | [Link](./experiments/04-final-workflow-test/report.md) |
 
 <!-- EXPERIMENT_LIST_END -->
