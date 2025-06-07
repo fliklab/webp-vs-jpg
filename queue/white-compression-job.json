@@ -1,0 +1,23 @@
+{
+  "experimentName": "White Image Compression Comparison",
+  "briefDescription": "순수한 흰색 이미지를 다양한 무손실 포맷으로 변환하여 압축 효율을 비교합니다.",
+  "source": "sources/white/png",
+  "tasks": [
+    {
+      "format": "webp",
+      "output_suffix": "webp-lossless",
+      "options": {
+        "quality": 100,
+        "lossless": true
+      }
+    },
+    {
+      "format": "avif",
+      "output_suffix": "avif-lossless",
+      "options": {
+        "quality": 100,
+        "lossless": true
+      }
+    }
+  ]
+}
