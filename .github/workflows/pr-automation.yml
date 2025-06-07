@@ -1,0 +1,100 @@
+name: PR Image Experiment Automation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+jobs:
+  automate-experiment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }} # Checkout the PR branch
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Get PR Title & Body
+        id: pr_info
+        run: |
+          echo "title=$(echo '${{ github.event.pull_request.title }}' | sed -n 's/feat: *//p')" >> $GITHUB_OUTPUT
+          echo "body=${{ toJSON(github.event.pull_request.body) }}" >> $GITHUB_OUTPUT
+
+      - name: Parse Experiment Config from PR Body
+        id: config
+        run: |
+          CONFIG_JSON=$(ts-node tools/parse-pr-body.ts "${{ steps.pr_info.outputs.body }}")
+          echo "json=$CONFIG_JSON" >> $GITHUB_OUTPUT
+
+      - name: Run Experiment Automation
+        id: experiment
+        env:
+          PR_TITLE: ${{ steps.pr_info.outputs.title }}
+          CONFIG_JSON: ${{ steps.config.outputs.json }}
+        run: |
+          if [ -z "$PR_TITLE" ]; then
+            echo "PR title does not follow 'feat: [Experiment Name]' format."
+            exit 1
+          fi
+
+          # 1. Init Experiment
+          npm run init-experiment -- "$PR_TITLE"
+
+          # 2. Get new experiment directory path
+          EXPERIMENT_SLUG=$(echo "$PR_TITLE" | iconv -t ascii//TRANSLIT | sed -r 's/[~\^]+//g' | sed -r 's/[^a-zA-Z0-9]+/-/g' | sed -r 's/^-+|-+$//g' | tr A-Z a-z)
+          LATEST_NUM=$(ls -d [0-9][0-9]-*/ | tail -n 1 | cut -d'-' -f1)
+          EXPERIMENT_DIR_PATH="${LATEST_NUM}-${EXPERIMENT_SLUG}"
+
+          # 3. Copy source image
+          SOURCE_PATH=$(echo "$CONFIG_JSON" | jq -r .source)
+          IMAGE_FILENAME=$(basename "$SOURCE_PATH")
+          mkdir -p "$EXPERIMENT_DIR_PATH/image"
+          cp "$SOURCE_PATH" "$EXPERIMENT_DIR_PATH/image/$IMAGE_FILENAME"
+
+          NEW_IMAGE_PATH="$EXPERIMENT_DIR_PATH/image/$IMAGE_FILENAME"
+
+          # 4. Convert images based on config
+          echo "$CONFIG_JSON" | jq -c '.conversions[]' | while read -r conversion; do
+            FORMAT=$(echo "$conversion" | jq -r .format)
+            QUALITY=$(echo "$conversion" | jq -r .quality)
+            
+            CONVERT_ARGS="--path \"$NEW_IMAGE_PATH\" --format \"$FORMAT\""
+            if [ "$QUALITY" != "null" ]; then
+              CONVERT_ARGS="$CONVERT_ARGS --quality \"$QUALITY\""
+            fi
+            
+            npm run convert -- $CONVERT_ARGS
+          done
+
+          # 5. Generate report
+          npm run generate-report -- --path "$EXPERIMENT_DIR_PATH"
+
+          echo "dir_path=${EXPERIMENT_DIR_PATH}" >> $GITHUB_OUTPUT
+
+      - name: Update README and Commit Changes
+        run: |
+          # 6. Update README
+          npm run update-readme
+
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+          git add .
+
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: auto-generate experiment results for '${{ steps.pr_info.outputs.title }}'"
+            git push
+          fi
