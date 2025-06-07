@@ -6,10 +6,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "init-experiment": "ts-node scripts/init-experiment.ts",
-    "convert": "ts-node scripts/convert.ts",
-    "generate-report": "ts-node scripts/generate-report.ts",
-    "update-readme": "ts-node scripts/update-readme.ts"
+    "init-experiment": "node --loader ts-node/esm scripts/init-experiment.ts",
+    "convert": "node --loader ts-node/esm scripts/convert.ts",
+    "generate-report": "node --loader ts-node/esm scripts/generate-report.ts",
+    "update-readme": "node --loader ts-node/esm scripts/update-readme.ts"
   },
   "keywords": [],
   "author": "",
