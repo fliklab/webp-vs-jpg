@@ -47,5 +47,6 @@
 | 02 | Text Rendering Test | [Link](./experiments/02-text-rendering-test/report.md) |
 | 03 | Test | [Link](./experiments/03-test/report.md) |
 | 04 | Final Workflow Test | [Link](./experiments/04-final-workflow-test/report.md) |
+| 05 | Text Render Batch | [Link](./experiments/05-text-render-batch/report.md) |
 
 <!-- EXPERIMENT_LIST_END -->
