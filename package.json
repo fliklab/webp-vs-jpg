@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "init-experiment": "ts-node scripts/init-experiment.ts"
+    "init-experiment": "ts-node scripts/init-experiment.ts",
+    "convert": "ts-node scripts/convert.ts",
+    "generate-report": "ts-node scripts/generate-report.ts"
   },
   "keywords": [],
   "author": "",
@@ -13,8 +15,13 @@
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.15.30",
+    "@types/yargs": "^17.0.33",
     "fs-extra": "^11.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "sharp": "^0.34.2",
+    "yargs": "^18.0.0"
   }
 }

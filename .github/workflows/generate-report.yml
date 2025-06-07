@@ -1,0 +1,57 @@
+name: "Auto-generate Report"
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR Branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0 # To compare with main branch
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Find New Experiment Directory
+        id: find_dir
+        run: |
+          # Compare with the merge base of the PR
+          git fetch origin ${{ github.base_ref }}
+          MERGE_BASE=$(git merge-base origin/${{ github.base_ref }} HEAD)
+
+          # Find directories that exist in the PR but not in the base
+          # and match the experiment directory pattern 'NN-...'
+          NEW_DIR=$(git diff --diff-filter=A --name-only $MERGE_BASE HEAD | grep -E '^[0-9]+-.+/report.md$' | xargs -n 1 dirname || echo '')
+
+          if [ -z "$NEW_DIR" ]; then
+            echo "새로운 실험 폴더를 찾지 못했습니다."
+            echo "dir_path=" >> $GITHUB_OUTPUT
+          else
+            echo "실험 폴더 찾음: $NEW_DIR"
+            echo "dir_path=$NEW_DIR" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate Report
+        if: steps.find_dir.outputs.dir_path != ''
+        run: npm run generate-report -- --path ${{ steps.find_dir.outputs.dir_path }}
+
+      - name: Commit and Push Report
+        if: steps.find_dir.outputs.dir_path != ''
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs(report): 자동 생성된 리포트 업데이트"
+          file_pattern: "${{ steps.find_dir.outputs.dir_path }}/report.md"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
