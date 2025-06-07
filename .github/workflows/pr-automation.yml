@@ -85,12 +85,12 @@ jobs:
               npm run convert -- --source "$NEW_IMAGE_PATH" --task "$task" --outputDir "$EXPERIMENT_DIR_PATH/image"
             done
             
-            # 5. Generate report
-            npm run generate-report -- --path "$EXPERIMENT_DIR_PATH"
-            
-            # 6. Move processed json file to the result directory
+            # 5. Move processed json file to the result directory FIRST
             mv "$JSON_PATH" "$EXPERIMENT_DIR_PATH/"
             echo "Finished processing ${JSON_PATH}. Moved to ${EXPERIMENT_DIR_PATH}/"
+
+            # 6. Generate report AFTER moving the json
+            npm run generate-report -- --path "$EXPERIMENT_DIR_PATH"
           done
 
       - name: Commit and Push Changes
