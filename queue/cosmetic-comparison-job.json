@@ -1,0 +1,18 @@
+{
+  "experimentName": "Pre-converted Cosmetics Comparison",
+  "briefDescription": "사전에 변환된 화장품 이미지 세트의 파일 특성을 비교합니다.",
+  "analysis_sets": [
+    {
+      "name": "256x256 Set",
+      "path": "sources/cosmetics/256"
+    },
+    {
+      "name": "512x512 Set",
+      "path": "sources/cosmetics/512"
+    },
+    {
+      "name": "1024x1024 Set",
+      "path": "sources/cosmetics/1024"
+    }
+  ]
+}

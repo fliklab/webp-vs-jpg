@@ -11,6 +11,10 @@ interface BatchConfig {
   description: string;
   source?: string | string[];
   testCasesPath?: string;
+  analysis_sets?: {
+    name: string;
+    path: string;
+  }[];
   tasks?: ConversionTask[];
   task_groups?: {
     condition: {
@@ -26,12 +30,25 @@ interface BatchConfig {
 
 const processBatch = async (configPath: string, outputDir: string) => {
   const config: BatchConfig = await fs.readJson(configPath);
+  const imageOutputDir = path.join(outputDir, "image");
+  await fs.ensureDir(imageOutputDir);
+
+  if (config.analysis_sets) {
+    console.log(`Copying ${config.analysis_sets.length} analysis sets...`);
+    for (const set of config.analysis_sets) {
+      const sourceDir = set.path;
+      const destDir = path.join(imageOutputDir, path.basename(sourceDir));
+      await fs.copy(sourceDir, destDir);
+      console.log(`Copied ${sourceDir} to ${destDir}`);
+    }
+    console.log("✅ Analysis sets copied.");
+    return; // End processing here for this type of job
+  }
+
   const sourceFiles = await resolveSourceFiles(
     config.source,
     config.testCasesPath
   );
-  const imageOutputDir = path.join(outputDir, "image");
-  await fs.ensureDir(imageOutputDir);
 
   console.log(`Processing batch for ${sourceFiles.length} images...`);
 
