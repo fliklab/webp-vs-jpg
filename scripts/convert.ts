@@ -95,19 +95,17 @@ const main = async () => {
     })
     .parseAsync();
 
+  let task: ConversionTask;
   try {
-    // JSON 파싱 에러 처리 개선
-    let task: ConversionTask;
-    try {
-      task = JSON.parse(argv.task.replace(/'/g, '"')); // 작은따옴표를 큰따옴표로 변환
-    } catch (parseError) {
-      throw new Error(
-        `JSON 파싱 실패: ${argv.task}는 유효한 JSON 형식이 아닙니다.\n${
-          (parseError as Error).message
-        }`
-      );
-    }
+    task = JSON.parse(argv.task);
+  } catch (error) {
+    console.error(
+      `❌ JSON 파싱 실패: task가 유효한 JSON 형식이 아닙니다. 받은 값: ${argv.task}`
+    );
+    process.exit(1);
+  }
 
+  try {
     await fs.ensureDir(argv.outputDir);
     await convertImage(argv.source, task, argv.outputDir);
   } catch (error) {
