@@ -10,24 +10,21 @@
 
 ## 🖼️ 원본 이미지
 
-| 속성   | 값  |
-| :----- | :-- |
-| 파일명 |     |
-| 포맷   |     |
-| 해상도 |     |
-| 용량   |     |
+| 속성   | 값                    |
+| :----- | :-------------------- |
+| 파일명 | {{SOURCE_FILENAME}}   |
+| 포맷   | {{SOURCE_FORMAT}}     |
+| 해상도 | {{SOURCE_RESOLUTION}} |
+| 용량   | {{SOURCE_SIZE_KB}} KB |
 
 _(이미지 미리보기)_
-![원본 이미지](./image/original.png)
+![원본 이미지](./image/{{SOURCE_FILENAME}})
 
 ## 📊 변환 결과
 
 <!-- RESULT_TABLE_START -->
-
-| 원본 | 변환 포맷 | 퀄리티 | 결과 파일명 | 용량 (KB) | 용량 변화 |
-| :--- | :-------- | :----- | :---------- | :-------- | :-------- |
-|      |           |        |             |           |           |
-
+<!-- 비워두세요. 스크립트가 자동으로 채웁니다. -->
+<!-- Leave empty. The script will fill this in automatically. -->
 <!-- RESULT_TABLE_END -->
 
 ## ✅ 결론

@@ -2,6 +2,7 @@ import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
 import fs from "fs-extra";
 import path from "path";
+import sharp from "sharp";
 
 interface ImageInfo {
   filename: string;
@@ -26,18 +27,16 @@ const generateReport = async (experimentPath: string) => {
   const configPath = path.join(experimentPath, jsonFiles[0]);
   const config = await fs.readJson(configPath);
 
-  const imageFiles = await fs.readdir(imageDir);
-  const sourceImageStats = await fs.stat(
-    path.join(imageDir, config.source.split("/").pop())
-  );
+  const sourceImageName = config.source.split("/").pop();
+  const sourceImagePath = path.join(imageDir, sourceImageName);
+  const sourceImageStats = await fs.stat(sourceImagePath);
+  const sourceMetadata = await sharp(sourceImagePath).metadata();
 
   let table = `| 포맷 | 퀄리티/옵션 | 리사이즈 | 결과 파일명 | 용량 (KB) | 용량 변화 |\n`;
   table += `|:---|:---|:---|:---|:---|:---|\n`;
 
   const sourceSizeKB = bytesToKB(sourceImageStats.size);
-  table += `| **(원본)** | - | - | **${config.source
-    .split("/")
-    .pop()}** | **${sourceSizeKB}** | - |\n`;
+  table += `| **(원본)** | - | - | **${sourceImageName}** | **${sourceSizeKB}** | - |\n`;
 
   for (const task of config.tasks) {
     const outputFilename = `${path.basename(
@@ -62,6 +61,16 @@ const generateReport = async (experimentPath: string) => {
   }
 
   let reportContent = await fs.readFile(reportPath, "utf-8");
+
+  reportContent = reportContent
+    .replace(/{{SOURCE_FILENAME}}/g, sourceImageName)
+    .replace(/{{SOURCE_FORMAT}}/g, sourceMetadata.format || "-")
+    .replace(
+      /{{SOURCE_RESOLUTION}}/g,
+      `${sourceMetadata.width}x${sourceMetadata.height}`
+    )
+    .replace(/{{SOURCE_SIZE_KB}}/g, sourceSizeKB);
+
   const tableRegex =
     /<!-- RESULT_TABLE_START -->(.|\n)*<!-- RESULT_TABLE_END -->/;
   reportContent = reportContent.replace(
