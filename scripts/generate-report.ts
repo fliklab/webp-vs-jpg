@@ -20,7 +20,10 @@ const generateReport = async (experimentPath: string) => {
   }
   const configPath = path.join(experimentPath, jsonFiles[0]);
   const config = await fs.readJson(configPath);
-  const sourceFiles = await resolveSourceFiles(undefined, config.testCasesPath);
+  const sourceFiles = await resolveSourceFiles(
+    config.source,
+    config.testCasesPath
+  );
 
   let reportContent = await fs.readFile(reportPath, "utf-8");
   let resultsMarkdown = "";
