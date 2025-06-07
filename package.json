@@ -10,7 +10,8 @@
     "process-batch": "node --loader ts-node/esm scripts/process-batch.ts",
     "convert": "node --loader ts-node/esm scripts/convert.ts",
     "generate-report": "node --loader ts-node/esm scripts/generate-report.ts",
-    "update-readme": "node --loader ts-node/esm scripts/update-readme.ts"
+    "update-readme": "node --loader ts-node/esm scripts/update-readme.ts",
+    "prepare-set": "node --loader ts-node/esm tools/prepare-comparison-set.ts"
   },
   "keywords": [],
   "author": "",
