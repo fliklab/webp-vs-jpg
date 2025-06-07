@@ -55,5 +55,6 @@
 | 10 | JPG to WebP Noise Comparison | [Link](./experiments/10-jpg-to-webp-noise-comparison-job/report.md) |
 | 11 | Portrait Image Compression Comparison | [Link](./experiments/11-portrait-compression-job/report.md) |
 | 12 | Pre-converted Cosmetics Comparison | [Link](./experiments/12-cosmetic-comparison-job/report.md) |
+| 13 | Cosmetics Image Chained Conversion Comparison | [Link](./experiments/13-cosmetics-chain-comparison-job/report.md) |
 
 <!-- EXPERIMENT_LIST_END -->
