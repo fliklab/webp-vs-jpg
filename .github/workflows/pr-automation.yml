@@ -11,6 +11,8 @@ on:
 jobs:
   automate-experiment:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Allow the bot to push commits
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
