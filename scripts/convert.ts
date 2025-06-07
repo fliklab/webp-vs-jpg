@@ -3,6 +3,7 @@ import { hideBin } from "yargs/helpers";
 import sharp from "sharp";
 import path from "path";
 import fs from "fs-extra";
+import { fileURLToPath } from "url";
 
 // Sharp의 옵션 인터페이스들을 확장성 있게 정의
 export interface ResizeOptions {
@@ -98,7 +99,8 @@ const main = async () => {
 };
 
 // 이 파일이 직접 실행될 때만 main 함수를 호출
-if (require.main === module) {
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] === __filename) {
   main().catch((err) => {
     console.error("❌ 이미지 변환 중 오류 발생:", err);
     process.exit(1);

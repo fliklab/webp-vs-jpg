@@ -32,14 +32,8 @@ jobs:
       - name: Find JSON files to process
         id: find_json
         run: |
-          JSON_FILES=""
-          if [ "${{ github.event_name }}" == "push" ]; then
-            echo "Push event detected. Finding new JSON files."
-            JSON_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.before }} ${{ github.event.after }} -- 'queue/*.json')
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "Manual dispatch detected. Finding all JSON files in queue."
-            JSON_FILES=$(find queue -maxdepth 1 -type f -name "*.json" 2>/dev/null || true)
-          fi
+          echo "Finding all JSON files in queue."
+          JSON_FILES=$(find queue -maxdepth 1 -type f -name "*.json" 2>/dev/null || true)
 
           if [ -z "$JSON_FILES" ]; then
             echo "No JSON files to process."
