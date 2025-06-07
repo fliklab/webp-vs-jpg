@@ -1,0 +1,20 @@
+{
+  "description": "최종 워크플로우 확인을 위한 ss0607 이미지 압축 테스트",
+  "source": "sources/ss0607.png",
+  "tasks": [
+    {
+      "output_suffix": "webp_q80",
+      "format": "webp",
+      "options": {
+        "quality": 80
+      }
+    },
+    {
+      "output_suffix": "jpeg_q85",
+      "format": "jpeg",
+      "options": {
+        "quality": 85
+      }
+    }
+  ]
+}
