@@ -65,17 +65,7 @@ const generateReport = async (experimentPath: string) => {
 
     const sourceImageStats = await fs.stat(sourceImagePath);
     const sourceMetadata = await sharp(sourceImagePath).metadata();
-    const sourceSizeKB = bytesToKB(sourceImageStats.size);
-
-    resultsMarkdown += `### 원본: ${sourceFileName}\n\n`;
-    resultsMarkdown += `| 속성 | 값 |\n`;
-    resultsMarkdown += `|:---|:---|\n`;
-    resultsMarkdown += `| 포맷 | ${sourceMetadata.format} |\n`;
-    resultsMarkdown += `| 해상도 | ${sourceMetadata.width}x${sourceMetadata.height} |\n`;
-    resultsMarkdown += `| 용량 | ${sourceSizeKB} KB |\n\n`;
-
-    let table = `| 포맷 | 퀄리티/옵션 | 리사이즈 | 결과 파일명 | 용량 (KB) | 용량 변화 |\n`;
-    table += `|:---|:---|:---|:---|:---|:---|\n`;
+    const sourceImageRelativePath = path.join("image", sourceFileName);
 
     // 이 부분은 config에 task가 어떻게 정의되었는지에 따라 동적으로 생성해야 합니다.
     // config.tasks 또는 config.task_groups를 기반으로 각 소스 파일에 적용될 작업을 결정합니다.
@@ -116,19 +106,54 @@ const generateReport = async (experimentPath: string) => {
           ((stats.size - sourceImageStats.size) / sourceImageStats.size) *
           100
         ).toFixed(2);
-        const optionsStr = JSON.stringify(task.options || {});
-        const resizeStr = task.resize ? JSON.stringify(task.resize) : "-";
-        table += `| ${task.format} | \`${optionsStr}\` | \`${resizeStr}\` | ${outputFilename} | ${sizeKB} | ${sizeChange}% |\n`;
+        const outputRelativePath = path.join("image", outputFilename);
+        const outputMetadata = await sharp(outputPath).metadata();
+
+        resultsMarkdown += `### ${sourceFileName} => ${outputFilename}\n\n`;
+
+        resultsMarkdown += `**원본 파일**\n\n`;
+        resultsMarkdown += `| 미리보기 | 포맷 | 해상도 | 용량 |\n`;
+        resultsMarkdown += `|:---|:---|:---|:---|\n`;
+        const sourcePreview = `<a href="${sourceImageRelativePath}"><img src="${sourceImageRelativePath}" width="64"></a>`;
+        resultsMarkdown += `| ${sourcePreview} | ${sourceMetadata.format} | ${
+          sourceMetadata.width
+        }x${sourceMetadata.height} | ${bytesToKB(
+          sourceImageStats.size
+        )} KB |\n\n`;
+
+        resultsMarkdown += `**새 파일**\n\n`;
+        resultsMarkdown += `| 미리보기 | 포맷(옵션) | 해상도(변화) | 용량(변화) |\n`;
+        resultsMarkdown += `|:---|:---|:---|:---|\n`;
+
+        const outputPreview = `<a href="${outputRelativePath}"><img src="${outputRelativePath}" width="64"></a>`;
+
+        const optionsStr = task.options
+          ? ` (${Object.entries(task.options)
+              .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+              .join(", ")})`
+          : "";
+        const formatWithOptions = `${task.format}${optionsStr}`;
+
+        const newResolution = `${outputMetadata.width}x${outputMetadata.height}`;
+        const oldResolution = `${sourceMetadata.width}x${sourceMetadata.height}`;
+        const resolutionStr =
+          newResolution === oldResolution
+            ? `${newResolution} (-)`
+            : `${newResolution} (원본: ${oldResolution})`;
+
+        const capacityStr = `${sizeKB} KB (${sizeChange}%)`;
+
+        resultsMarkdown += `| ${outputPreview} | ${formatWithOptions} | ${resolutionStr} | ${capacityStr} |\n\n`;
+        resultsMarkdown += `---\n\n`;
       }
     }
-    resultsMarkdown += table + "\n---\n\n";
   }
 
   const tableRegex =
     /<!-- RESULT_TABLE_START -->(.|\n)*<!-- RESULT_TABLE_END -->/;
   reportContent = reportContent.replace(
     tableRegex,
-    `<!-- RESULT_TABLE_START -->\n${resultsMarkdown}\n<!-- RESULT_TABLE_END -->`
+    `<!-- RESULT_TABLE_START -->\n${resultsMarkdown.trimEnd()}\n\n<!-- RESULT_TABLE_END -->`
   );
 
   // 단일 원본 이미지를 가정했던 상단 정보 테이블은 제거하거나 주석 처리합니다.
