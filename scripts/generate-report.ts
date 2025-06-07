@@ -78,9 +78,31 @@ const generateReport = async (experimentPath: string) => {
     table += `|:---|:---|:---|:---|:---|:---|\n`;
 
     // 이 부분은 config에 task가 어떻게 정의되었는지에 따라 동적으로 생성해야 합니다.
-    // 여기서는 단순하게 config.tasks가 존재한다고 가정합니다.
-    const tasks = config.tasks || []; // TODO: task_groups 지원 추가 필요
-    for (const task of tasks) {
+    // config.tasks 또는 config.task_groups를 기반으로 각 소스 파일에 적용될 작업을 결정합니다.
+    let tasksToRun: any[] = [];
+    if (config.tasks) {
+      tasksToRun = config.tasks;
+    } else if (config.task_groups) {
+      for (const group of config.task_groups) {
+        const { condition, tasks } = group;
+        const width = sourceMetadata.width || 0;
+        const height = sourceMetadata.height || 0;
+        const format = sourceMetadata.format;
+
+        const isMatch =
+          (!condition.min_width || width >= condition.min_width) &&
+          (!condition.max_width || width <= condition.max_width) &&
+          (!condition.min_height || height >= condition.min_height) &&
+          (!condition.max_height || height <= condition.max_height) &&
+          (!condition.source_format || format === condition.source_format);
+
+        if (isMatch) {
+          tasksToRun.push(...tasks);
+        }
+      }
+    }
+
+    for (const task of tasksToRun) {
       const outputFilename = `${path.basename(
         sourceFileName,
         path.extname(sourceFileName)
