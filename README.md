@@ -49,5 +49,10 @@
 | 04 | Final Workflow Test | [Link](./experiments/04-final-workflow-test/report.md) |
 | 05 | Text Render Batch | [Link](./experiments/05-text-render-batch/report.md) |
 | 06 | JPG 노이즈 특성 분석 | [Link](./experiments/06-jpg-noise-test-job/report.md) |
+| 07 | JPG to WebP Noise Comparison | [Link](./experiments/07-jpg-to-webp-noise-comparison-job/report.md) |
+| 08 | N/A | [Link](./experiments/08-portrait-compression-job/report.md) |
+| 09 | White Image Compression Comparison | [Link](./experiments/09-white-compression-job/report.md) |
+| 10 | JPG to WebP Noise Comparison | [Link](./experiments/10-jpg-to-webp-noise-comparison-job/report.md) |
+| 11 | Portrait Image Compression Comparison | [Link](./experiments/11-portrait-compression-job/report.md) |
 
 <!-- EXPERIMENT_LIST_END -->
