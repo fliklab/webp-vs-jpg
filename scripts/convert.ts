@@ -1,82 +1,108 @@
-import sharp from "sharp";
-import path from "path";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import sharp from "sharp";
+import path from "path";
 import fs from "fs-extra";
 
-interface ConvertOptions {
-  sourcePath: string;
-  format: "jpeg" | "png" | "webp";
+// Sharp의 옵션 인터페이스들을 확장성 있게 정의
+interface ResizeOptions {
+  width?: number;
+  height?: number;
+}
+
+interface WebpOptions {
+  quality?: number;
+  lossless?: boolean;
+}
+
+interface JpegOptions {
   quality?: number;
 }
 
-const convertImage = async (options: ConvertOptions) => {
-  const { sourcePath, format, quality } = options;
+interface PngOptions {
+  quality?: number;
+}
+
+interface AvifOptions {
+  quality?: number;
+  speed?: number; // 0(느림, 고품질) ~ 8(빠름, 저품질)
+}
+
+// 변환 작업에 대한 인터페이스
+interface ConversionTask {
+  output_suffix: string;
+  format: "webp" | "jpeg" | "png" | "avif";
+  options: WebpOptions | JpegOptions | PngOptions | AvifOptions;
+  resize?: ResizeOptions;
+}
+
+const convertImage = async (
+  sourcePath: string,
+  task: ConversionTask,
+  outputDir: string
+) => {
+  const sourceFilename = path.basename(sourcePath, path.extname(sourcePath));
+  const outputFilename = `${sourceFilename}-${task.output_suffix}.${task.format}`;
+  const outputPath = path.join(outputDir, outputFilename);
+
+  let image = sharp(sourcePath);
+
+  // 리사이즈 옵션 적용
+  if (task.resize) {
+    image = image.resize(task.resize.width, task.resize.height);
+  }
+
+  // 포맷별 변환 옵션 적용
+  switch (task.format) {
+    case "webp":
+      image = image.webp(task.options as WebpOptions);
+      break;
+    case "jpeg":
+      image = image.jpeg(task.options as JpegOptions);
+      break;
+    case "png":
+      image = image.png(task.options as PngOptions);
+      break;
+    case "avif":
+      image = image.avif(task.options as AvifOptions);
+      break;
+  }
+
+  await image.toFile(outputPath);
+  console.log(`✅ Converted ${sourcePath} to ${outputPath}`);
+};
+
+// 메인 함수
+const main = async () => {
+  const argv = await yargs(hideBin(process.argv))
+    .option("source", {
+      alias: "s",
+      type: "string",
+      description: "원본 이미지 파일 경로",
+      demandOption: true,
+    })
+    .option("task", {
+      alias: "t",
+      type: "string",
+      description: "JSON 형식의 변환 작업 객체",
+      demandOption: true,
+    })
+    .option("outputDir", {
+      alias: "o",
+      type: "string",
+      description: "결과물이 저장될 디렉토리",
+      demandOption: true,
+    })
+    .parseAsync();
 
   try {
-    if (!(await fs.pathExists(sourcePath))) {
-      console.error(`오류: 소스 파일을 찾을 수 없습니다. 경로: ${sourcePath}`);
-      return;
-    }
-
-    const dir = path.dirname(sourcePath);
-    const filename = path.basename(sourcePath, path.extname(sourcePath));
-
-    const qualitySuffix = quality ? `_q${quality}` : "";
-    const outputFilename = `${filename}${qualitySuffix}.${format}`;
-    const outputPath = path.join(dir, outputFilename);
-
-    const image = sharp(sourcePath);
-    let convertedImage;
-
-    switch (format) {
-      case "jpeg":
-        convertedImage = image.jpeg({ quality });
-        break;
-      case "png":
-        convertedImage = image.png(); // PNG는 무손실 위주이므로 quality 옵션은 일반적으로 적게 사용됨
-        break;
-      case "webp":
-        convertedImage = image.webp({ quality });
-        break;
-      default:
-        console.error(
-          "오류: 지원하지 않는 포맷입니다. (jpeg, png, webp 중 선택)"
-        );
-        return;
-    }
-
-    await convertedImage.toFile(outputPath);
-
-    console.log(`✅ 이미지 변환 완료: ${outputPath}`);
+    const task: ConversionTask = JSON.parse(argv.task);
+    await fs.ensureDir(argv.outputDir);
+    await convertImage(argv.source, task, argv.outputDir);
   } catch (error) {
-    console.error("❌ 이미지 변환 중 오류 발생:", error);
+    console.error("❌ Image conversion failed:", error);
+    process.exit(1);
   }
 };
 
-const argv = yargs(hideBin(process.argv))
-  .option("path", {
-    alias: "p",
-    type: "string",
-    description: "변환할 이미지 파일 경로",
-    demandOption: true,
-  })
-  .option("format", {
-    alias: "f",
-    type: "string",
-    choices: ["jpeg", "png", "webp"],
-    description: "변환할 이미지 포맷",
-    demandOption: true,
-  })
-  .option("quality", {
-    alias: "q",
-    type: "number",
-    description: "이미지 퀄리티 (1-100, jpeg/webp용)",
-  })
-  .parseSync();
-
-convertImage({
-  sourcePath: argv.path,
-  format: argv.format as "jpeg" | "png" | "webp",
-  quality: argv.quality,
-});
+main();
