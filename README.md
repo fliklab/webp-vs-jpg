@@ -54,5 +54,6 @@
 | 09 | White Image Compression Comparison | [Link](./experiments/09-white-compression-job/report.md) |
 | 10 | JPG to WebP Noise Comparison | [Link](./experiments/10-jpg-to-webp-noise-comparison-job/report.md) |
 | 11 | Portrait Image Compression Comparison | [Link](./experiments/11-portrait-compression-job/report.md) |
+| 12 | Pre-converted Cosmetics Comparison | [Link](./experiments/12-cosmetic-comparison-job/report.md) |
 
 <!-- EXPERIMENT_LIST_END -->
