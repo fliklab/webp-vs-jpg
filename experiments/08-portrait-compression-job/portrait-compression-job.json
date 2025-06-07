@@ -1,0 +1,35 @@
+{
+  "experimentName": "Portrait Image Compression Comparison",
+  "briefDescription": "리사이즈된 인물 이미지를 WebP와 JPG로 변환하여 압축 효율과 품질을 비교합니다.",
+  "source": "sources/portraits/resized",
+  "tasks": [
+    {
+      "format": "webp",
+      "output_suffix": "webp-q75",
+      "options": {
+        "quality": 75
+      }
+    },
+    {
+      "format": "webp",
+      "output_suffix": "webp-q50",
+      "options": {
+        "quality": 50
+      }
+    },
+    {
+      "format": "jpg",
+      "output_suffix": "jpg-q75",
+      "options": {
+        "quality": 75
+      }
+    },
+    {
+      "format": "jpg",
+      "output_suffix": "jpg-q50",
+      "options": {
+        "quality": 50
+      }
+    }
+  ]
+}

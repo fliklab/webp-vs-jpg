@@ -1,7 +1,7 @@
 {
   "experimentName": "JPG to WebP Noise Comparison",
   "briefDescription": "JPG 노이즈 이미지를 다양한 품질의 WebP로 변환하여 파일 크기와 특성을 비교합니다.",
-  "testCasesPath": "experiments/jpg-noise-test/test-cases.json",
+  "testCasesPath": "sources/noise/jpg/test-cases.json",
   "tasks": [
     {
       "format": "webp",
