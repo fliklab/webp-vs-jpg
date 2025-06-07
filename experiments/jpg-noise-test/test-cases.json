@@ -1,0 +1,30 @@
+[
+  {
+    "name": "noise_4x4",
+    "path": "sources/noise/jpg/noise_4x4.jpg"
+  },
+  {
+    "name": "noise_8x8",
+    "path": "sources/noise/jpg/noise_8x8.jpg"
+  },
+  {
+    "name": "noise_16x16",
+    "path": "sources/noise/jpg/noise_16x16.jpg"
+  },
+  {
+    "name": "noise_32x32",
+    "path": "sources/noise/jpg/noise_32x32.jpg"
+  },
+  {
+    "name": "noise_64x64",
+    "path": "sources/noise/jpg/noise_64x64.jpg"
+  },
+  {
+    "name": "noise_128x128",
+    "path": "sources/noise/jpg/noise_128x128.jpg"
+  },
+  {
+    "name": "noise_256x256",
+    "path": "sources/noise/jpg/noise_256x256.jpg"
+  }
+]
