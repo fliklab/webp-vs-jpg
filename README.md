@@ -48,5 +48,6 @@
 | 03 | Test | [Link](./experiments/03-test/report.md) |
 | 04 | Final Workflow Test | [Link](./experiments/04-final-workflow-test/report.md) |
 | 05 | Text Render Batch | [Link](./experiments/05-text-render-batch/report.md) |
+| 06 | JPG 노이즈 특성 분석 | [Link](./experiments/06-jpg-noise-test-job/report.md) |
 
 <!-- EXPERIMENT_LIST_END -->
